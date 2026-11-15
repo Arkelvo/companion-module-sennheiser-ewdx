@@ -11,6 +11,12 @@ export function UpdatePresets(self: ModuleInstance): void {
 	const presets: CompanionPresetDefinitions<ModuleTypes> = {}
 
 	if (self.device instanceof EWDXReceiver) {
+		const defaultDisplayOptions = {
+			showLabels: ['name', 'frequency', 'battery', 'rsqi'],
+			showIcons: ['antenna', 'battery', 'mute', 'warning', 'encryption', 'afPeak', 'activeAntenna'],
+			batteryAlertLevel: 20,
+			showRuntime: false,
+		}
 		const createPreset = (receiver: number): CompanionPresetDefinitions<ModuleTypes> => ({
 			[`receiver_channel_status_${receiver}`]: {
 				type: 'layered',
@@ -18,7 +24,12 @@ export function UpdatePresets(self: ModuleInstance): void {
 				canvas: { decoration: ButtonGraphicsDecorationType.None },
 				elements: receiverDisplayElements(),
 				localVariables: [
-					{ variableName: 'status', variableType: 'feedback', feedbackId: 'receiverDisplay', options: { receiver } },
+					{
+						variableName: 'status',
+						variableType: 'feedback',
+						feedbackId: 'receiverDisplay',
+						options: { receiver, ...defaultDisplayOptions },
+					},
 				],
 				feedbacks: [],
 				steps: [
