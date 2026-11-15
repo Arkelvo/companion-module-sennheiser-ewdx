@@ -19,7 +19,39 @@ The channel status presets use Companion 5's native drawing layers and standard 
 
 After updating from the legacy status display, apply the **Channel Status** preset again. Existing buttons retain their original layers; module upgrade scripts cannot replace those layers. The legacy `RX: Status Display` feedback remains available for existing buttons.
 
-In the module presets you will find a status display for every receiver channel of your device. It contains the following information:
+#### Channel Status Display Configuration
+
+The `RX: Status Display Data` feedback (used by the Channel Status presets) can be configured with the following options:
+
+**Labels to Display** (multiselect):
+
+- Channel Name
+- Frequency
+- Battery
+- RSQI
+- Transmitter Type (P2 - shows the transmitter model, e.g., SKM, SKP)
+
+**Icons to Display** (multiselect):
+
+- RF Quality (Antenna) - Shows signal quality with colored antenna icon
+- Battery - Shows battery level with color-coded battery icon
+- Mute - Shows mute icon when transmitter or receiver is muted
+- Warning - Shows warning icon when channel has warnings
+- Encryption - Shows encryption status (enabled/disabled/error)
+- AF Peak - Shows AF peak warning icon
+- Active Antenna A/B - Shows which antenna is currently receiving (A or B indicator)
+
+**Battery Alert Level (%)** (dropdown): Configurable threshold for battery color change (default: 20%)
+
+- Green: above alert level
+- Yellow: above half of alert level
+- Red: below half of alert level
+
+**Show Battery Runtime (H:MMh) instead of Percentage** (checkbox): When enabled and transmitter reports battery type "Battery" with valid runtime, shows remaining time as `H:MMh` (e.g., `5:12h`) instead of percentage.
+
+#### Information Displayed by Default
+
+In the module presets you will find a status display for every receiver channel of your device. By default it contains the following information:
 
 - Battery percentage or remaining runtime as `H:MMh` (for example, 312 minutes is `5:12h`)
 - Receiver channel name
@@ -52,9 +84,21 @@ Beside this information the following icons are used:
 
 ![Ant B](./assets/icons/ant_b.png) Antenna - B is currently receiving
 
-![Battery](./assets/icons/battery_green.png) Battery - Shows the remaining battery percentage (> 50% Green, >= 20% Yellow, < 20% Red)
+![Battery](./assets/icons/battery_green.png) Battery - Shows the remaining battery percentage (> 50% Green, >= 20% Yellow, < 20% Red) - thresholds configurable via Battery Alert Level
 
 When the RX identification is active (either by triggering from Companion or by pressing the Power Button on a transmitter), a green bar at the bottom of the button is shown. If you are using the preset, the identify action will be already assigned to the button.
+
+#### Known Limitations
+
+The following status information is **not available** from the EW-DX protocol and therefore cannot be displayed:
+
+- Continuous audio level meter (no audio metering data provided by device)
+- RF level in dBm (only RSQI 0-100% is available)
+- Separate signal quality meter (RSQI serves as the quality indicator)
+- Transmitter lock status (menu/power lock)
+- Transmitter power level in mW
+
+These limitations are due to the Sennheiser EW-DX OSC protocol not providing these data points. The module uses only data that is actually available from the device subscriptions.
 
 ### CHG 70N Status Display Explanation
 

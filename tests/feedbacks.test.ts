@@ -212,4 +212,14 @@ describe('getReceiverDisplayState', () => {
 		expect(state.signal).toBe('0%')
 		expect(state.antenna).toContain('ant_gray') // gray antenna for rsqi 0
 	})
+
+	it('includes txType when enabled in showLabels', () => {
+		const state = getReceiverDisplayState(mockReceiver, 0, { showLabels: ['txType'] })
+		expect(state.txType).toBe('SKM')
+	})
+
+	it('omits txType when not in showLabels', () => {
+		const state = getReceiverDisplayState(mockReceiver, 0, { showLabels: ['name'] })
+		expect(state.txType).toBeUndefined()
+	})
 })
