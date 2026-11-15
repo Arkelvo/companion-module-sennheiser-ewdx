@@ -14,21 +14,77 @@ const triangle = (location: 'topLeft' | 'topRight'): string =>
 const antennaLeft = pngDataUri(triangle('topLeft'))
 const antennaRight = pngDataUri(triangle('topRight'))
 
+export interface ReceiverDisplayOptions {
+	showLabels?: string[]
+	showIcons?: string[]
+	batteryAlertLevel?: number
+	showRuntime?: boolean
+}
+
 export function getReceiverDisplayState(
 	receiver: EWDXReceiver,
 	channelIndex: number,
-): Record<string, string | boolean | number> {
+	options: ReceiverDisplayOptions = {},
+): Record<string, string | boolean | number | undefined> {
 	const channel = receiver.channels[channelIndex]
 	const connected = receiver.deviceConnected && !!channel
+
+	// Default options
+	const showLabels = options.showLabels ?? ['name', 'frequency', 'battery', 'rsqi']
+	const showIcons = options.showIcons ?? [
+		'antenna',
+		'battery',
+		'mute',
+		'warning',
+		'encryption',
+		'afPeak',
+		'activeAntenna',
+	]
+	const batteryAlertLevel = options.batteryAlertLevel ?? 20
+	const showRuntime = options.showRuntime ?? false
+
 	const gauge = Math.max(0, Math.min(100, Number(channel?.mate.batteryGauge) || 0))
-	return {
+
+	// Battery color based on configurable alert level
+	const batteryColor = !connected
+		? 0x1f2937
+		: gauge > batteryAlertLevel
+			? 0x14532d // green
+			: gauge >= Math.max(1, Math.floor(batteryAlertLevel / 2))
+				? 0x713f12 // yellow
+				: 0x7f1d1d // red
+
+	// Battery label with runtime option
+	let batteryLabel: string | undefined
+	if (connected && showLabels.includes('battery')) {
+		batteryLabel = formatBatteryLabel(channel.mate.batteryType, channel.mate.batteryLifetime, gauge, showRuntime)
+	}
+
+	const state: Record<string, string | boolean | number | undefined> = {
 		connected,
-		name: connected ? channel.name : 'OFFLINE',
-		frequency: connected ? (channel.frequency / 1000).toFixed(3) : 'NO LINK',
-		batteryLabel: connected ? formatBatteryLabel(channel.mate.batteryType, channel.mate.batteryLifetime, gauge) : '—',
-		batteryColor: !connected ? 0x1f2937 : gauge > 50 ? 0x14532d : gauge >= 20 ? 0x713f12 : 0x7f1d1d,
-		signal: connected ? `${channel.rsqi}%` : '—',
-		antenna: pngDataUri(
+	}
+
+	// Labels
+	if (showLabels.includes('name')) {
+		state.name = connected ? channel.name : 'OFFLINE'
+	}
+	if (showLabels.includes('frequency')) {
+		state.frequency = connected ? (channel.frequency / 1000).toFixed(3) : 'NO LINK'
+	}
+	if (showLabels.includes('battery')) {
+		state.batteryLabel = batteryLabel
+		state.batteryColor = batteryColor
+	}
+	if (showLabels.includes('rsqi')) {
+		state.signal = connected ? `${channel.rsqi}%` : '—'
+	}
+	if (showLabels.includes('txType')) {
+		state.txType = connected ? channel.mate.type : '—'
+	}
+
+	// Icons
+	if (showIcons.includes('antenna')) {
+		state.antenna = pngDataUri(
 			connected
 				? channel.rsqi > 70
 					? icons.antenna.green
@@ -38,21 +94,35 @@ export function getReceiverDisplayState(
 							? icons.antenna.red
 							: icons.antenna.gray
 				: icons.antenna.gray,
-		),
-		shield: pngDataUri(
+		)
+	}
+	if (showIcons.includes('encryption')) {
+		state.shield = pngDataUri(
 			connected && channel.hasAes256Error
 				? icons.shield.red
 				: connected && receiver.encryption
 					? icons.shield.green
 					: icons.shield.gray,
-		),
-		antennaLeft: connected && channel.activeAntenna == 1,
-		antennaRight: connected && channel.activeAntenna == 2,
-		muted: connected && (channel.mate.muted || channel.muted),
-		warning: connected && channel.warnings,
-		peak: connected && channel.hasAfPeakWarning,
-		identification: connected && channel.identification,
+		)
 	}
+	if (showIcons.includes('activeAntenna')) {
+		state.antennaLeft = connected && channel.activeAntenna == 1
+		state.antennaRight = connected && channel.activeAntenna == 2
+	}
+	if (showIcons.includes('mute')) {
+		state.muted = connected && (channel.mate.muted || channel.muted)
+	}
+	if (showIcons.includes('warning')) {
+		state.warning = connected && channel.warnings
+	}
+	if (showIcons.includes('afPeak')) {
+		state.peak = connected && channel.hasAfPeakWarning
+	}
+
+	// Always include identification for the green bar
+	state.identification = connected && channel.identification
+
+	return state
 }
 
 // Coordinates use a 72x72 reference canvas. Native layers handle device resolutions,

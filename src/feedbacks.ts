@@ -22,7 +22,16 @@ export type FeedbacksSchema = {
 	tx_mute_config_sk: { type: 'boolean'; options: { receiver: number; setting: MuteOptions } }
 	tx_mute_config_table: { type: 'boolean'; options: { receiver: number; setting: MuteOptionsTable } }
 	rx_sync_ignore: { type: 'boolean'; options: { receiver: number; setting: SyncSettings } }
-	receiverDisplay: { type: 'value'; options: { receiver: number } }
+	receiverDisplay: {
+		type: 'value'
+		options: {
+			receiver: number
+			showLabels?: string[]
+			showIcons?: string[]
+			batteryAlertLevel?: number
+			showRuntime?: boolean
+		}
+	}
 	receiverState: { type: 'advanced'; options: { receiver: number } }
 	dante_port_mapping: { type: 'boolean'; options: { mapping: DantePortMapping } }
 	chargerDisplay: { type: 'value'; options: { bay: 0 | 1 } }
@@ -366,8 +375,64 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			type: 'value',
 			options: [
 				{ id: 'receiver', type: 'dropdown', label: 'Receiver Channel', default: 0, choices: getChannelOptions() },
+				{
+					id: 'showLabels',
+					type: 'multidropdown',
+					label: 'Labels to Display',
+					default: ['name', 'frequency', 'battery', 'rsqi'],
+					choices: [
+						{ id: 'name', label: 'Channel Name' },
+						{ id: 'frequency', label: 'Frequency' },
+						{ id: 'battery', label: 'Battery' },
+						{ id: 'rsqi', label: 'RSQI' },
+						{ id: 'txType', label: 'Transmitter Type' },
+					],
+				},
+				{
+					id: 'showIcons',
+					type: 'multidropdown',
+					label: 'Icons to Display',
+					default: ['antenna', 'battery', 'mute', 'warning', 'encryption', 'afPeak', 'activeAntenna'],
+					choices: [
+						{ id: 'antenna', label: 'RF Quality (Antenna)' },
+						{ id: 'battery', label: 'Battery' },
+						{ id: 'mute', label: 'Mute' },
+						{ id: 'warning', label: 'Warning' },
+						{ id: 'encryption', label: 'Encryption' },
+						{ id: 'afPeak', label: 'AF Peak' },
+						{ id: 'activeAntenna', label: 'Active Antenna A/B' },
+					],
+				},
+				{
+					id: 'batteryAlertLevel',
+					type: 'dropdown',
+					label: 'Battery Alert Level (%)',
+					default: 20,
+					choices: [
+						{ id: 20, label: '20%' },
+						{ id: 15, label: '15%' },
+						{ id: 10, label: '10%' },
+						{ id: 5, label: '5%' },
+					],
+				},
+				{
+					id: 'showRuntime',
+					type: 'checkbox',
+					label: 'Show Battery Runtime (H:MMh) instead of Percentage',
+					default: false,
+				},
 			],
-			callback: (feedback) => getReceiverDisplayState(receiver, feedback.options.receiver),
+			callback: (feedback) => {
+				const state = getReceiverDisplayState(receiver, feedback.options.receiver, feedback.options)
+				// Filter out undefined values for JsonValue compatibility
+				const filtered: Record<string, string | number | boolean> = {}
+				for (const [key, value] of Object.entries(state)) {
+					if (value !== undefined) {
+						filtered[key] = value
+					}
+				}
+				return filtered
+			},
 		}
 		feedbacks.receiverState = {
 			name: 'RX: Status Display',
